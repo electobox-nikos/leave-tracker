@@ -68,6 +68,12 @@ class LeaveAdmin(LimitUserChoicesMixin, admin.ModelAdmin):
         if request.user.role == UserRole.EMPLOYEE:
             return ("status",)
         return ()
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.role == UserRole.EMPLOYEE and not request.user.is_superuser:
+            return qs.filter(user=request.user)
+        return qs
 
     def save_model(self, request, obj, form, change):
         if obj.status == LeaveStatus.APPROVED:
