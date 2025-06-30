@@ -79,6 +79,7 @@ class Leave(BaseModel):
     end_date = models.DateField(verbose_name=_("End date"))
     days = models.IntegerField(verbose_name=_("Days"))
     business_year = models.ForeignKey(BusinessYear, on_delete=models.CASCADE, verbose_name=_("Business year"))
+    description = models.TextField(verbose_name=_("Description"), blank=True, null=True)
     status = models.CharField(
         max_length=9,
         choices=LeaveStatus.choices,
