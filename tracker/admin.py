@@ -53,6 +53,8 @@ class LeaveTypeAdmin(admin.ModelAdmin):
 
 class AvailableLeaveAdmin(LimitUserChoicesMixin, admin.ModelAdmin):
     list_display = ("user", "business_year", "days", "used_days")
+    list_filter = ["user", "business_year"]
+    search_fields = ["user__first_name", "user__last_name", "user__email"]
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
