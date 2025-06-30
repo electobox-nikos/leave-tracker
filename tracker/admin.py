@@ -63,6 +63,8 @@ class AvailableLeaveAdmin(LimitUserChoicesMixin, admin.ModelAdmin):
 
 class LeaveAdmin(LimitUserChoicesMixin, admin.ModelAdmin):
     list_display = ["user", "leave_type", "start_date", "end_date", "status", "days"]
+    list_filter = ["user", "status", "leave_type"]
+    search_fields = ["user__first_name", "user__last_name", "user__email"]
 
     def get_readonly_fields(self, request, obj=None):
         if request.user.role == UserRole.EMPLOYEE:
