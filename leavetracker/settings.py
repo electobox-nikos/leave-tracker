@@ -127,7 +127,7 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = []
 
-STATIC_ROOT = os.path.join(BASE_DIR, env.str("STATIC_ROOT", default="static"))
+STATIC_ROOT = os.path.join(BASE_DIR, env.str("STATIC_ROOT", default="staticfiles"))
 
 
 AUTH_USER_MODEL = "database.User"
