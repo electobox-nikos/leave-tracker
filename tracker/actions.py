@@ -1,7 +1,12 @@
 from django.contrib import messages
 from django.utils.crypto import get_random_string
 from django.utils.safestring import mark_safe
+from unfold.decorators import action
 
+@action(
+    description="Reset Password",
+    icon="key",
+)
 def reset_password(modeladmin, request, queryset):
     """
     Reset the password of selected users to a 10-digit password containing only uppercase characters and numbers.
@@ -32,6 +37,3 @@ def reset_password(modeladmin, request, queryset):
         ),
         level=messages.SUCCESS,
     )
-
-
-reset_password.short_description = "Reset Password"

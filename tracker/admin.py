@@ -4,6 +4,8 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from tracker.actions import reset_password
 from database.models import UserRole
 from database.models import LeaveStatus
+from unfold.admin import ModelAdmin as UnfoldModelAdmin
+from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
 class LimitUserChoicesMixin:
     """
@@ -25,7 +27,11 @@ class LimitUserChoicesMixin:
                 kwargs["queryset"] = User.objects.filter(pk=request.user.pk)
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(BaseUserAdmin, UnfoldModelAdmin):
+    # Forms loaded from `unfold.forms`
+    form = UserChangeForm
+    add_form = UserCreationForm
+    change_password_form = AdminPasswordChangeForm
     list_display = BaseUserAdmin.list_display + ("role",)
     list_filter = BaseUserAdmin.list_filter + ("role",)
     fieldsets = BaseUserAdmin.fieldsets + (
@@ -45,13 +51,13 @@ class UserAdmin(BaseUserAdmin):
             return qs.filter(pk=request.user.pk)
         return qs
 
-class BusinessYearAdmin(admin.ModelAdmin):
+class BusinessYearAdmin(UnfoldModelAdmin):
     list_display = ("year",)
 
-class LeaveTypeAdmin(admin.ModelAdmin):
+class LeaveTypeAdmin(UnfoldModelAdmin):
     list_display = ("name",)
 
-class AvailableLeaveAdmin(LimitUserChoicesMixin, admin.ModelAdmin):
+class AvailableLeaveAdmin(LimitUserChoicesMixin, UnfoldModelAdmin):
     list_display = ("user", "business_year", "days", "used_days")
     list_filter = ["user", "business_year"]
     search_fields = ["user__first_name", "user__last_name", "user__email"]
@@ -63,7 +69,7 @@ class AvailableLeaveAdmin(LimitUserChoicesMixin, admin.ModelAdmin):
         return qs
 
 
-class LeaveAdmin(LimitUserChoicesMixin, admin.ModelAdmin):
+class LeaveAdmin(LimitUserChoicesMixin, UnfoldModelAdmin):
     list_display = ["user", "leave_type", "start_date", "end_date", "status", "days"]
     list_filter = ["user", "status", "leave_type"]
     search_fields = ["user__first_name", "user__last_name", "user__email"]
