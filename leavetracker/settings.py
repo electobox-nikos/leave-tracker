@@ -15,7 +15,6 @@ from pathlib import Path
 import environ
 
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -158,13 +157,14 @@ UNFOLD = {
 
 # Email settings
 EMAIL_BACKEND = env.str(
-    "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
-DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL',
-                             default='webmaster@localhost')
-SERVER_EMAIL = env.str('DEFAULT_FROM_EMAIL',
-                       default='webmaster@localhost')
+    "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend"
+)
+DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", default="webmaster@localhost")
+SERVER_EMAIL = env.str("DEFAULT_FROM_EMAIL", default="webmaster@localhost")
 ANYMAIL_MAILGUN_API_KEY = env.str("ANYMAIL_MAILGUN_API_KEY", default="")
-ANYMAIL_MAILGUN_API_URL = env.str("ANYMAIL_MAILGUN_API_URL",
-                                  default="https://api.eu.mailgun.net/v3")
-ANYMAIL_WEBHOOK_SECRET = env.str("ANYMAIL_WEBHOOK_SECRET",
-                                 default="")
+ANYMAIL_MAILGUN_API_URL = env.str(
+    "ANYMAIL_MAILGUN_API_URL", default="https://api.eu.mailgun.net/v3"
+)
+ANYMAIL_WEBHOOK_SECRET = env.str("ANYMAIL_WEBHOOK_SECRET", default="")
+
+EMAIL_ADMIN_EMAILS = env.list("EMAIL_ADMIN_EMAILS", default=[])

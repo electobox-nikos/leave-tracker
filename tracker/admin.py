@@ -6,6 +6,10 @@ from database.models import UserRole
 from database.models import LeaveStatus
 from unfold.admin import ModelAdmin as UnfoldModelAdmin
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+from tracker.emails import (
+    send_leave_created_notification,
+    send_leave_status_change_notification,
+)
 
 
 class LimitUserChoicesMixin:
@@ -92,19 +96,76 @@ class LeaveAdmin(LimitUserChoicesMixin, UnfoldModelAdmin):
         return qs
 
     def save_model(self, request, obj, form, change):
-        if obj.status == LeaveStatus.APPROVED:
-            available_leave = AvailableLeave.objects.get(
-                user=obj.user, business_year=obj.business_year
-            )
-            available_leave.used_days += obj.days
-            available_leave.save()
+        # Track old status before saving (for status change detection)
+        old_status = None
+        if change and obj.pk:
+            try:
+                old_leave = Leave.objects.get(pk=obj.pk)
+                old_status = old_leave.status
+            except Leave.DoesNotExist:
+                pass
+
+        # Handle available leave days calculation
+        if change and old_status:
+            # If status was APPROVED and is being changed away from APPROVED
+            if (
+                old_status == LeaveStatus.APPROVED
+                and obj.status != LeaveStatus.APPROVED
+            ):
+                try:
+                    available_leave = AvailableLeave.objects.get(
+                        user=obj.user, business_year=obj.business_year
+                    )
+                    available_leave.used_days -= obj.days
+                    available_leave.save()
+                except AvailableLeave.DoesNotExist:
+                    pass
+            # If status is being changed to APPROVED
+            elif (
+                old_status != LeaveStatus.APPROVED
+                and obj.status == LeaveStatus.APPROVED
+            ):
+                try:
+                    available_leave = AvailableLeave.objects.get(
+                        user=obj.user, business_year=obj.business_year
+                    )
+                    available_leave.used_days += obj.days
+                    available_leave.save()
+                except AvailableLeave.DoesNotExist:
+                    pass
+        elif obj.status == LeaveStatus.APPROVED:
+            # New leave that's immediately approved
+            try:
+                available_leave = AvailableLeave.objects.get(
+                    user=obj.user, business_year=obj.business_year
+                )
+                available_leave.used_days += obj.days
+                available_leave.save()
+            except AvailableLeave.DoesNotExist:
+                pass
         elif obj.status == LeaveStatus.CANCELLED:
-            available_leave = AvailableLeave.objects.get(
-                user=obj.user, business_year=obj.business_year
-            )
-            available_leave.used_days -= obj.days
-            available_leave.save()
+            # Handle cancellation (subtract days if it was previously approved)
+            if change and old_status == LeaveStatus.APPROVED:
+                try:
+                    available_leave = AvailableLeave.objects.get(
+                        user=obj.user, business_year=obj.business_year
+                    )
+                    available_leave.used_days -= obj.days
+                    available_leave.save()
+                except AvailableLeave.DoesNotExist:
+                    pass
+
+        # Save the model first
         super().save_model(request, obj, form, change)
+
+        # Send email notifications
+        if not change:
+            # New leave created
+            send_leave_created_notification(obj)
+        elif old_status and old_status != obj.status:
+            # Status changed - send notification for APPROVED or REJECTED
+            if obj.status in [LeaveStatus.APPROVED, LeaveStatus.REJECTED]:
+                send_leave_status_change_notification(obj, old_status)
 
 
 admin.site.register(User, UserAdmin)
