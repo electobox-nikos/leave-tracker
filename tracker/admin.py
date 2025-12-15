@@ -7,11 +7,13 @@ from database.models import LeaveStatus
 from unfold.admin import ModelAdmin as UnfoldModelAdmin
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
+
 class LimitUserChoicesMixin:
     """
     Mixin for ModelAdmin: employees can only pick themselves in user-related
     dropdowns; admins keep the full list.
     """
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         print(db_field.remote_field.model)
         if db_field.remote_field.model is User:
@@ -26,6 +28,7 @@ class LimitUserChoicesMixin:
             if request.user.role == UserRole.EMPLOYEE and not request.user.is_superuser:
                 kwargs["queryset"] = User.objects.filter(pk=request.user.pk)
         return super().formfield_for_manytomany(db_field, request, **kwargs)
+
 
 class UserAdmin(BaseUserAdmin, UnfoldModelAdmin):
     # Forms loaded from `unfold.forms`
@@ -51,11 +54,14 @@ class UserAdmin(BaseUserAdmin, UnfoldModelAdmin):
             return qs.filter(pk=request.user.pk)
         return qs
 
+
 class BusinessYearAdmin(UnfoldModelAdmin):
     list_display = ("year",)
 
+
 class LeaveTypeAdmin(UnfoldModelAdmin):
     list_display = ("name",)
+
 
 class AvailableLeaveAdmin(LimitUserChoicesMixin, UnfoldModelAdmin):
     list_display = ("user", "business_year", "days", "used_days")
@@ -78,7 +84,7 @@ class LeaveAdmin(LimitUserChoicesMixin, UnfoldModelAdmin):
         if request.user.role == UserRole.EMPLOYEE:
             return ("status",)
         return ()
-    
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.role == UserRole.EMPLOYEE and not request.user.is_superuser:
@@ -87,11 +93,15 @@ class LeaveAdmin(LimitUserChoicesMixin, UnfoldModelAdmin):
 
     def save_model(self, request, obj, form, change):
         if obj.status == LeaveStatus.APPROVED:
-            available_leave = AvailableLeave.objects.get(user=obj.user, business_year=obj.business_year)
+            available_leave = AvailableLeave.objects.get(
+                user=obj.user, business_year=obj.business_year
+            )
             available_leave.used_days += obj.days
             available_leave.save()
         elif obj.status == LeaveStatus.CANCELLED:
-            available_leave = AvailableLeave.objects.get(user=obj.user, business_year=obj.business_year)
+            available_leave = AvailableLeave.objects.get(
+                user=obj.user, business_year=obj.business_year
+            )
             available_leave.used_days -= obj.days
             available_leave.save()
         super().save_model(request, obj, form, change)
@@ -102,4 +112,3 @@ admin.site.register(BusinessYear, BusinessYearAdmin)
 admin.site.register(LeaveType, LeaveTypeAdmin)
 admin.site.register(Leave, LeaveAdmin)
 admin.site.register(AvailableLeave, AvailableLeaveAdmin)
-

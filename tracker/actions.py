@@ -3,6 +3,7 @@ from django.utils.crypto import get_random_string
 from django.utils.safestring import mark_safe
 from unfold.decorators import action
 
+
 @action(
     description="Reset Password",
     icon="key",
