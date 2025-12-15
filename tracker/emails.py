@@ -24,7 +24,7 @@ def send_leave_created_notification(leave: Leave):
     message = f"""
 A new leave request has been submitted:
 
-Employee: {leave.user.get_full_name() or leave.user.username})
+Employee: {leave.user.get_full_name() or leave.user.username} ({leave.user.email})
 Leave Type: {leave.leave_type.name}
 Start Date: {leave.start_date}
 End Date: {leave.end_date}
