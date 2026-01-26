@@ -9,9 +9,7 @@ from leavetracker.settings import EMAIL_ADMIN_EMAILS
 
 
 # Email addresses to notify when a leave is created
-ADMIN_EMAILS = [
-    email for email in EMAIL_ADMIN_EMAILS
-]
+ADMIN_EMAILS = [email for email in EMAIL_ADMIN_EMAILS]
 
 
 def send_leave_created_notification(leave: Leave):

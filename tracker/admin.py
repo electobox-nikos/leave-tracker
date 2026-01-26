@@ -105,26 +105,40 @@ class LeaveAdmin(LimitUserChoicesMixin, UnfoldModelAdmin):
             except Leave.DoesNotExist:
                 pass
 
-        # Handle available leave days calculation
-        if change and old_status:
-            # If status was APPROVED and is being changed away from APPROVED
-            if (
-                old_status == LeaveStatus.APPROVED
-                and obj.status != LeaveStatus.APPROVED
-            ):
-                try:
-                    available_leave = AvailableLeave.objects.get(
-                        user=obj.user, business_year=obj.business_year
-                    )
-                    available_leave.used_days -= obj.days
-                    available_leave.save()
-                except AvailableLeave.DoesNotExist:
-                    pass
-            # If status is being changed to APPROVED
-            elif (
-                old_status != LeaveStatus.APPROVED
-                and obj.status == LeaveStatus.APPROVED
-            ):
+        # Check if leave type is "Sick" - if so, skip available leave calculations
+        is_sick_leave = obj.leave_type.name.lower() == "sick"
+
+        # Handle available leave days calculation (skip for Sick leave type)
+        if not is_sick_leave:
+            if change and old_status:
+                # If status was APPROVED and is being changed away from APPROVED
+                if (
+                    old_status == LeaveStatus.APPROVED
+                    and obj.status != LeaveStatus.APPROVED
+                ):
+                    try:
+                        available_leave = AvailableLeave.objects.get(
+                            user=obj.user, business_year=obj.business_year
+                        )
+                        available_leave.used_days -= obj.days
+                        available_leave.save()
+                    except AvailableLeave.DoesNotExist:
+                        pass
+                # If status is being changed to APPROVED
+                elif (
+                    old_status != LeaveStatus.APPROVED
+                    and obj.status == LeaveStatus.APPROVED
+                ):
+                    try:
+                        available_leave = AvailableLeave.objects.get(
+                            user=obj.user, business_year=obj.business_year
+                        )
+                        available_leave.used_days += obj.days
+                        available_leave.save()
+                    except AvailableLeave.DoesNotExist:
+                        pass
+            elif obj.status == LeaveStatus.APPROVED:
+                # New leave that's immediately approved
                 try:
                     available_leave = AvailableLeave.objects.get(
                         user=obj.user, business_year=obj.business_year
@@ -133,27 +147,17 @@ class LeaveAdmin(LimitUserChoicesMixin, UnfoldModelAdmin):
                     available_leave.save()
                 except AvailableLeave.DoesNotExist:
                     pass
-        elif obj.status == LeaveStatus.APPROVED:
-            # New leave that's immediately approved
-            try:
-                available_leave = AvailableLeave.objects.get(
-                    user=obj.user, business_year=obj.business_year
-                )
-                available_leave.used_days += obj.days
-                available_leave.save()
-            except AvailableLeave.DoesNotExist:
-                pass
-        elif obj.status == LeaveStatus.CANCELLED:
-            # Handle cancellation (subtract days if it was previously approved)
-            if change and old_status == LeaveStatus.APPROVED:
-                try:
-                    available_leave = AvailableLeave.objects.get(
-                        user=obj.user, business_year=obj.business_year
-                    )
-                    available_leave.used_days -= obj.days
-                    available_leave.save()
-                except AvailableLeave.DoesNotExist:
-                    pass
+            elif obj.status == LeaveStatus.CANCELLED:
+                # Handle cancellation (subtract days if it was previously approved)
+                if change and old_status == LeaveStatus.APPROVED:
+                    try:
+                        available_leave = AvailableLeave.objects.get(
+                            user=obj.user, business_year=obj.business_year
+                        )
+                        available_leave.used_days -= obj.days
+                        available_leave.save()
+                    except AvailableLeave.DoesNotExist:
+                        pass
 
         # Save the model first
         super().save_model(request, obj, form, change)
